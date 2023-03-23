@@ -1,0 +1,15 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+
+\begin{document}
+
+\section{Expression normalization}
+{
+\Large
+(($\lambda$a.($\lambda$b.b b) ($\lambda$b.b b)) b) (($\lambda$c.(c b)) ($\lambda$a.a)) \newline
+$\rightarrow_\beta$ (($\lambda$b.b b) ($\lambda$b.b b)) (($\lambda$c.(c b)) ($\lambda$a.a)) \newline
+$\rightarrow_\beta$ (($\lambda$b.b b) ($\lambda$b.b b)) (($\lambda$a.a) b) \newline
+$\rightarrow_\beta$ (($\lambda$b.b b) ($\lambda$b.b b)) b
+}
+
+\end{document}
