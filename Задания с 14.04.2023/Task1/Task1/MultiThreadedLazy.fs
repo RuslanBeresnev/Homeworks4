@@ -9,5 +9,5 @@ type MultiThreadedLazy<'a> (supplier : unit -> 'a) =
 
     interface ILazy<'a> with
         member this.Get() =
-            if result.IsNone then lock lockObject (fun () -> result <- Some(supplier()))
+            lock lockObject (fun () -> if result.IsNone then result <- Some(supplier()))
             result.Value

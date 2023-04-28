@@ -12,4 +12,8 @@
     <Compile Include="SingleThreadedLazy.fs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="FsUnit" Version="5.2.0" />
+  </ItemGroup>
+
 </Project>
