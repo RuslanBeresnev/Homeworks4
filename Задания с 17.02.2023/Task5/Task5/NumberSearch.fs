@@ -1,13 +1,12 @@
 ﻿open System
 
 let searchNumber list number =
-    let rec searching list number currentIndex =
-        try 
-            if List.item currentIndex list = number then currentIndex
-            else searching (list) number (currentIndex + 1)
-        with
-            | :? System.ArgumentException -> -1
-    searching list number 0
+    let rec searching currentList index =
+        match currentList with
+        | head :: tail -> 
+            if head = number then index else searching tail (index + 1)
+        | _ -> -1
+    searching list 0
 
 let examplaryList = [1; 2; 3; 4; 5]
 printfn "Examplary list: %A" examplaryList
