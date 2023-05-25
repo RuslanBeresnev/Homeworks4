@@ -13,13 +13,15 @@ let printCommands =
     printfn "Save data to file: 6"
     printfn "Read data from file: 7"
 
-let addPhoneAndName phonebook name phone = (name, phone) :: phonebook 
-
 let getPhoneByName phonebook name =
     phonebook |> List.filter(fun (currentName, _) -> name = currentName) |> List.map(snd)
 
 let getNameByPhone phonebook phone =
     phonebook |> List.filter(fun (_, currentPhone) -> phone = currentPhone) |> List.map(fst)
+
+let addPhoneAndName phonebook name phone =
+    if List.isEmpty (getPhoneByName phonebook name) && List.isEmpty (getNameByPhone phonebook phone) then (name, phone) :: phonebook
+    else phonebook
 
 let rec printPhonebook phonebook =
     match phonebook with

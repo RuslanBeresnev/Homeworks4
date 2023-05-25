@@ -23,3 +23,28 @@ let writeDataToFileAndReadDataFromFileFunctionsTest () =
     writeDataToFile [("User", "89999999999")] "../../../Phonebook.txt"
     let result = readDataFromFile "../../../Phonebook.txt"
     Assert.AreEqual([("User", "89999999999")], result)
+
+[<Test>]
+let tryToGetDataMissingInPhonebookTest () =
+    let phonebook = addPhoneAndName [] "User" "89999999999"
+    let missingName = getNameByPhone phonebook "111-111-111"
+    let missingPhone = getPhoneByName phonebook "Anonim"
+    Assert.IsEmpty(missingName)
+    Assert.IsEmpty(missingPhone)
+
+[<Test>]
+let tryToAddNameThatAlreadyInPhonebookTest () =
+    let phonebook = [("User", "111-111-111")]
+    let result = addPhoneAndName phonebook "User" "222-222-222"
+    Assert.AreEqual(phonebook, result)
+
+[<Test>]
+let tryToAddPhoneThatAlreadyInPhonebookTest () =
+    let phonebook = [("User", "111-111-111")]
+    let result = addPhoneAndName phonebook "User2" "111-111-111"
+    Assert.AreEqual(phonebook, result)
+
+[<Test>]
+let tryToGetPhonebookFromEmptyFileTest () =
+    let data = readDataFromFile "../../../Empty File.txt"
+    Assert.IsEmpty(data)
