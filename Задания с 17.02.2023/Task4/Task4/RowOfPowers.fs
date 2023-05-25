@@ -1,10 +1,10 @@
 ﻿open System
 
 let generatePowerRow n m =
-    let rec generating list currentNumber =
-        if List.length list = m + 1 then list
-        else generating (currentNumber :: list) (currentNumber / 2)
-    generating [] ((2.0 ** float (n + m)) |> int)
+    let rec generating list currentNumber iter =
+        if iter = m + 1 then list
+        else generating (currentNumber :: list) (currentNumber / 2) (iter + 1)
+    generating [] ((2.0 ** float (n + m)) |> int) 0
 
 printfn "Enter n:"
 let n = Console.ReadLine() |> int
