@@ -18,3 +18,7 @@ let ComplexCorrectSequenceTest () =
 [<Test>]
 let ComplexIncorrectSequenceTest () =
     Assert.False(checkingBracketSequenceForCorrectness ['{'; '['; '}'; ']'])
+
+[<Test>]
+let EmptySequenceTest () =
+    Assert.True(checkingBracketSequenceForCorrectness [])

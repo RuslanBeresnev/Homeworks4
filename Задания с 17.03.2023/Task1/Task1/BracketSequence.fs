@@ -1,22 +1,31 @@
 ﻿module BracketSequence
 
 let checkingBracketSequenceForCorrectness (sequence : List<char>) =
-    let isPair openBracket closeBracket = 
-        match openBracket with
-        | '(' -> closeBracket = ')'
-        | '{' -> closeBracket = '}'
-        | '[' -> closeBracket = ']'
-        | _ -> false
+    let bracketTypes = [ ('(', ')'); ('{', '}'); ('[', ']') ]
+    let openingBrackets = bracketTypes |> List.map fst
+
+    let isPair openingBracket closingBracket =
+        let rec recursiveBypass currentBracketsList index =
+            match currentBracketsList with
+            | h :: t ->
+                if fst h = openingBracket then snd h = closingBracket
+                else recursiveBypass t (index + 1)
+            | _ -> false
+        recursiveBypass bracketTypes 0
 
     let rec checkElementOfSequence (currentSequence: List<char>) (stack: List<char>) =
-        if currentSequence.IsEmpty && stack.IsEmpty then true
-        elif currentSequence.IsEmpty && stack <> [] then false            
-        else
-            let currentValue = List.head currentSequence
-            if currentValue = '(' || currentValue = '{' || currentValue = '[' then
-                checkElementOfSequence (List.tail currentSequence) (currentValue :: stack)
-            else if (stack.IsEmpty) then false
-            else if (isPair (List.head stack) currentValue) then 
-                checkElementOfSequence (List.tail currentSequence) (List.tail stack)
-            else false
+        match currentSequence with
+        | seqHead :: seqTail ->
+             if openingBrackets |> List.contains seqHead then checkElementOfSequence seqTail (seqHead :: stack)
+             else
+                match stack with
+                | stackHead :: stackTail ->
+                    if isPair stackHead seqHead then checkElementOfSequence seqTail stackTail
+                    else false
+                | _ -> false
+        | _ ->
+            match stack with
+            | h :: t -> false
+            | _ -> true
+
     checkElementOfSequence sequence []
