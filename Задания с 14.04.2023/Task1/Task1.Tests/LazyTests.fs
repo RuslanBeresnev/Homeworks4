@@ -2,13 +2,11 @@ module Lazy.Tests
 
 open FsUnit
 open NUnit.Framework
-open System.Collections.Generic
 open System.Threading
-open System.Threading.Tasks
 
 open ILazy
 open SingleThreadedLazy
-open MultiThreadedLazy
+open ThreadSafeLockLazy
 open LockFreeLazy
 
 [<Test>]
@@ -25,24 +23,55 @@ let ``Single threaded lazy Get() method calculates result once`` () =
     counter.Value |> should equal 1
 
 [<Test>]
-let ``Multi threaded lazy Get() method returns correct result`` () =
-    let lazyObj = MultiThreadedLazy<int>(fun () -> 5 * 5) :> ILazy<int>
+let ``Thread-safe lock lazy Get() method returns correct result`` () =
+    let lazyObj = ThreadSafeLockLazy<int>(fun () -> 5 * 5) :> ILazy<int>
     lazyObj.Get() |> should equal 25
-
-[<Test>]
-let ``Multi threaded lazy Get() method calculates result once`` () =
-    let counter = ref 0
-    let lazyObj = MultiThreadedLazy<unit>(fun () -> counter.Value <- Interlocked.Increment counter) :> ILazy<unit>
-    Parallel.For(0, 8, (fun obj -> lazyObj.Get())) |> ignore
-    counter.Value |> should equal 1
 
 [<Test>]
 let ``Lock-free lazy Get() method returns correct result`` () =
     let lazyObj = LockFreeLazy<int>(fun () -> 5 * 5) :> ILazy<int>
     lazyObj.Get() |> should equal 25
 
+let supplierWasCalledOnce (lazyObject : ILazy<obj>) (manualResetEvent : ManualResetEvent) =
+    for i = 0 to 8 do
+        manualResetEvent.Reset() |> ignore
+
+        let tasksArray = Seq.init 100 (fun _ -> async { return lazyObject.Get() })
+
+        let resultAsync = tasksArray |> Async.Parallel
+        manualResetEvent.Set() |> ignore
+        let taskResults = resultAsync |> Async.RunSynchronously
+
+        let goldenObj = Seq.item 0 taskResults
+
+        taskResults
+        |> Seq.forall (fun object -> obj.ReferenceEquals(object, goldenObj))
+        |> should be True
+
 [<Test>]
-let ``Lock-free lazy Get() method returns the same object`` () =
-    let lazyObj = LockFreeLazy<List<int>>(fun () -> new List<int>()) :> ILazy<List<int>>
-    let list = lazyObj.Get()
-    Parallel.For(0, 8, (fun obj -> lazyObj.Get() |> should equal list)) |> ignore
+let ThreadSafeLockLazyTest () =
+    let mre = new ManualResetEvent(false)
+    let counter = ref 0
+
+    let supplier () =
+        mre.WaitOne() |> ignore
+        Interlocked.Increment counter |> ignore
+        obj ()
+
+    let lazyObject = ThreadSafeLockLazy<obj>(supplier) :> ILazy<obj>
+    supplierWasCalledOnce lazyObject mre
+
+    counter.Value |> should equal 1
+
+[<Test>]
+let LockFreeLazyTest () =
+    let mre = new ManualResetEvent(false)
+    let counter = ref 0
+
+    let supplier () =
+        mre.WaitOne() |> ignore
+        Interlocked.Increment counter |> ignore
+        obj ()
+
+    let lazyObject = LockFreeLazy<obj>(supplier) :> ILazy<obj>
+    supplierWasCalledOnce lazyObject mre
