@@ -3,24 +3,16 @@ namespace LocalNetwork.Tests
 open LocalNetwork
 open NUnit.Framework
 open FsUnit
-open Foq
 open System.Collections.Generic
 
 module Tests =
-
-    // Operating system object
-    let mockOS (infectionProbability: float) =
-        Mock<IOS>()
-            .Setup(fun os -> <@ os.InfectionProbability @>)
-            .Returns(infectionProbability)
-            .Create()
 
     /// Computer with 100% chance to be infected
     type WeaklyProtectedComputer() =
         let mutable isInfected = false
 
         interface IComputer with
-            member this.OS = mockOS 1.0
+            member this.OS = "Weakly-protected OS"
             member this.getInfected() = isInfected <- true
             member this.IsInfected with get() = isInfected
 
@@ -29,20 +21,16 @@ module Tests =
         let mutable isInfected = false
 
         interface IComputer with
-            member this.OS = mockOS 0.0
+            member this.OS = "Well-protected OS"
             member this.getInfected () = ()
             member this.IsInfected with get() = isInfected
 
-    // Infected computer object
-    let mockInfectedComputer () =
-        Mock<IComputer>()
-            .Setup(fun computer -> <@ computer.IsInfected @>)
-            .Returns(true)
-            .Setup(fun computer -> <@ computer.OS @>)
-            .Returns(mockOS(0.0))
-            .Setup(fun computer -> <@ computer.getInfected() @>)
-            .Returns(())
-            .Create()
+    /// Realization of infected computer
+    type InfectedComputer() =
+        interface IComputer with
+            member this.OS = "Some OS"
+            member this.getInfected () = ()
+            member this.IsInfected with get() = true
     
     // Create the network with connected computers
     let createNetwork (infectedComputer: IComputer) (uninfectedComputers: IComputer list) =
@@ -71,7 +59,7 @@ module Tests =
     [<Test>]
     let ``Should behave as BFS if all computers are weakly protected`` () =
 
-        let infectedComputer = mockInfectedComputer()
+        let infectedComputer = InfectedComputer()
         let uninfectedComputers = List.init 6 (fun _ -> WeaklyProtectedComputer() :> IComputer)
 
         let network = createNetwork infectedComputer uninfectedComputers
@@ -85,7 +73,7 @@ module Tests =
     [<Test>]
     let ``Shouldn't change state if all computers are well protected`` () =
 
-        let infectedComputer = mockInfectedComputer ()
+        let infectedComputer = InfectedComputer()
         let uninfectedComputers = List.init 6 (fun _ -> WellProtectedComputer() :> IComputer)
 
         let network = createNetwork infectedComputer uninfectedComputers
