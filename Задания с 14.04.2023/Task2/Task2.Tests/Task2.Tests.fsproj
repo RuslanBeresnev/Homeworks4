@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="MiniCrawler.Tests.fs" />
+    <Compile Include="MiniCrawlerTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

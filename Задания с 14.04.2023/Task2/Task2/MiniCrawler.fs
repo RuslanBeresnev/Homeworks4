@@ -1,40 +1,40 @@
 ﻿module MiniCrawler
 
+open System.Net.Http
 open System.Text.RegularExpressions
-open System.IO
-open System.Net
 
-/// Finds all links matching with linkRegex
+// Get links from main page
 let getAllLinks (html : string) =
     [for oneMatch in (Regex("<a href\s*=\s*\"?(https?://[^\"]+)\"?\s*>", RegexOptions.Compiled).Matches(html) : MatchCollection) 
     -> oneMatch.Groups[1].Value]
 
-/// Downloads page asynchronously by url
-let fetchAsync (url : string) =
-       async {
-           try
-               let request = WebRequest.Create(url)
-               use! response = request.AsyncGetResponse()
-               use stream = response.GetResponseStream()
-               use reader = new StreamReader(stream)
-               let html = reader.ReadToEnd()
-               return Some html
-           with 
-               | _ -> printfn "Site unavailable"
-                      return None
-       }
+// Download html from url
+let fetchAsync (url : string) (client : HttpClient) =
+    client.GetStringAsync url |> Async.AwaitTask |> Async.Catch
+ 
+// Get sizes list from linked pages
+let getSizes pages =
+    pages
+    |> Seq.map (fun page ->
+        match page with
+        | Choice1Of2 (x : string) -> Some x.Length
+        | Choice2Of2 (_ : exn) -> None)
 
-/// Prints result of downloading
-let printPageInfo url (downloaded : Option<string>) = 
-    match downloaded with
-    | Some html -> printfn "%s    Length: %d symbols" url html.Length
-    | _ -> printfn "Bad response from %s" url
+// HttpClient creating
+let client = new HttpClient()
 
-/// Downoads all pages from links in the current page
-let downloadLinkedPages (url : string) =
-    let mainPageContent = fetchAsync url |> Async.RunSynchronously
-    match mainPageContent with
-    | Some content -> let links = content |> getAllLinks
-                      let downloadedPages = links |> List.map (fun link -> link |> fetchAsync) |> Async.Parallel |> Async.RunSynchronously
-                      downloadedPages |>  Array.iteri (fun i (result : string option) -> printPageInfo (links.Item i) result)
-    | None -> ()
+// Get all refered links and their sizes
+let crawl url =
+    async {
+        let! page = fetchAsync url client
+        let html =
+            match page with
+            | Choice1Of2 result -> Some result
+            | Choice2Of2 (_ : exn) -> None
+        match html with
+        | Some value ->
+            let links = getAllLinks value
+            let! pages = links |> Seq.map (fun link -> fetchAsync link client) |> Async.Parallel
+            return getSizes pages |> Seq.zip links
+        | None -> return List.empty
+    }
